@@ -1,0 +1,94 @@
+<project name="TK1-PR5" default="help" basedir=".">
+	<!-- set global properties for this build -->
+	<property name="src" location="src" />
+	<property name="rsc" location="rsc" />
+	<property name="bin" location="bin" />
+	<property name="main-class-server" value="server.Main" />
+	<property name="main-class-client" value="client.Main" />
+	<property name="server-jar" value="TK1-PR5-server.jar" />
+	<property name="client-jar" value="TK1-PR5-client.jar" />
+	<property name="lib" value="lib" />
+	<path id="class.path">
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- IP property where to connect to -->
+	<property name="ip" value="" />
+
+	<target name="help">
+		<echo>Please use "ant run-server" or "ant run-client"!</echo>
+	</target>
+
+	<target name="init">
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${bin}" />
+	</target>
+
+	<target name="compile" depends="init" description="compile the source">
+		<!-- Compile the java code from ${src} into ${bin} -->
+		<javac srcdir="${src}" destdir="${bin}">
+			<classpath refid="class.path" />
+		</javac>
+	</target>
+
+	<target name="copy" depends="compile" description="copy resources">
+		<!-- Copy the resources  from ${rsc} into ${bin} -->
+		<copy todir="${bin}">
+			<fileset dir="${rsc}" />
+		</copy>
+	</target>
+
+	<target name="dist" depends="copy" description="generate the distribution">
+		<!-- Put everything in ${bin} into the jar files -->
+		<manifestclasspath property="lib.list-server" jarfile="${server-jar}">
+			<classpath refid="class.path" />
+		</manifestclasspath>
+		<manifestclasspath property="lib.list-client" jarfile="${client-jar}">
+			<classpath refid="class.path" />
+		</manifestclasspath>
+
+		<jar destfile="${server-jar}" basedir="${bin}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class-server}" />
+				<attribute name="Class-Path" value="${lib.list-server}" />
+			</manifest>
+		</jar>
+		<jar destfile="${client-jar}" basedir="${bin}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class-client}" />
+				<attribute name="Class-Path" value="${lib.list-client}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="clean" description="clean up">
+		<!-- Delete bin folder and jar files. -->
+		<delete dir="${bin}" />
+		<delete file="${server-jar}" />
+		<delete file="${client-jar}" />
+	</target>
+
+	<target name="run-server" description="run the server jar file" depends="dist">
+		<!-- Run the JAR. -->
+		<java jar="${server-jar}" fork="true" failonerror="true" maxmemory="128m">
+			<classpath>
+				<pathelement location="${server-jar}" />
+				<pathelement path="${java.class.path}" />
+			</classpath>
+		</java>
+	</target>
+
+	<target name="run-client" description="run the client jar file" depends="dist">
+		<!-- Run the JAR. -->
+		<java jar="${client-jar}" fork="true" failonerror="true" maxmemory="128m">
+			<!-- An IP can be specified with -Dip=... -->
+			<arg value="${ip}" />
+			<classpath>
+				<pathelement location="${client-jar}" />
+				<pathelement path="${java.class.path}" />
+			</classpath>
+		</java>
+	</target>
+</project>

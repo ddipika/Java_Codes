@@ -1,0 +1,83 @@
+<project name="TK1-PR2_clients" default="run" basedir=".">
+	<!-- set global properties for this build -->
+	<property name="src" location="src" />
+	<property name="rsc" location="rsc" />
+	<property name="bin" location="bin" />
+	<property name="main-class" value="gui.MainWindow" />
+	<property name="jar" value="TK1-PR2-Client.jar" />
+	<property name="lib" value="lib" />
+	<path id="class.path">
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+	
+
+	<target name="init">
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${bin}" />
+	</target>
+
+	<target name="compile" depends="init" description="compile the source">
+		<!-- Compile the java code from ${src} into ${bin} -->
+		<javac srcdir="${src}" destdir="${bin}">
+			<classpath refid="class.path" />
+		</javac>
+	</target>
+
+	<target name="copy" depends="compile" description="copy resources">
+		<!-- Copy the resources  from ${rsc} into ${bin} -->
+		<copy todir="${bin}">
+			<fileset dir="${rsc}" />
+		</copy>
+	</target>
+
+	<target name="dist" depends="copy" description="generate the distribution">
+		<!-- Put everything in ${bin} into the jar files -->
+                <manifestclasspath property="lib.list" jarfile="${jar}">
+                    <classpath refid="class.path" />
+                </manifestclasspath>
+                
+		<jar destfile="${jar}" basedir="${bin}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}" />
+				<attribute name="Class-Path" value="${lib.list}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="clean" description="clean up">
+		<!-- Delete bin folder and jar files. -->
+		<delete dir="${bin}" />
+		<delete file="${jar}" />
+	</target>
+
+	<target name="run-soap" description="run the jar file" depends="dist">
+		<!-- Run the JAR soapliy. -->
+		<java jar="${jar}" fork="true" failonerror="true" maxmemory="128m">
+			<arg value="SOAP" />
+			<classpath>
+				<pathelement location="${jar}" />
+				<pathelement path="${java.class.path}" />
+			</classpath>
+		</java>
+	</target>
+
+	<target name="run-rest" description="run the jar file" depends="dist">
+		<!-- Run the JAR restful. -->
+		<java jar="${jar}" fork="true" failonerror="true" maxmemory="128m">
+			<arg value="REST" />
+			<classpath>
+				<pathelement location="${jar}" />
+				<pathelement path="${java.class.path}" />
+			</classpath>
+		</java>
+	</target>
+
+	<target name="run" description="start two clients in parallel">
+		<parallel>
+			<antcall target="run-soap" />
+			<antcall target="run-rest" />
+		</parallel>
+	</target>
+</project>

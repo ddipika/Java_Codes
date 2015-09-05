@@ -1,0 +1,102 @@
+<project name="TK1-PR1" default="run-project" basedir=".">
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="rsc" location="rsc"/>
+    <property name="bin" location="bin"/>
+    <property name="client-main-class" value="client.MainWindow"/>
+    <property name="server-main-class" value="server.GameServer"/>
+    <property name="jar-client" value="TK1-PR1-client.jar"/>
+    <property name="jar-server" value="TK1-PR1-server.jar"/>
+
+
+    <target name="init">
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${bin}"/>
+    </target>
+
+    <target name="compile" depends="init"
+            description="compile the source" >
+        <!-- Compile the java code from ${src} into ${bin} -->
+        <javac srcdir="${src}" destdir="${bin}"/>
+    </target>
+  
+    <target name="copy" depends="compile"
+            description="copy resources" >
+    	<!-- Copy the resources  from ${rsc} into ${bin} -->
+        <copy todir="${bin}">
+            <fileset dir="${rsc}"/>
+        </copy>
+    </target>
+
+    <target name="dist" depends="copy,rmic"
+            description="generate the distribution" >
+        <!-- Put everything in ${bin} into the jar files -->
+        <jar destfile="${jar-client}" basedir="${bin}">
+            <manifest>
+                <attribute name="Main-Class" value="${client-main-class}"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+        </jar>
+        <jar destfile="${jar-server}" basedir="${bin}">
+            <manifest>
+                <attribute name="Main-Class" value="${server-main-class}"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="clean"
+            description="clean up" >
+    	<!-- Delete bin folder and jar files. -->
+        <delete dir="${bin}"/>
+        <delete file="${jar-client}"/>
+        <delete file="${jar-server}"/>
+    </target>
+  
+    <target name="rmic" depends="compile">
+    	<!-- Run the RMI compiler. -->
+        <rmic classname="server.GameServer" base="${bin}" />
+        <rmic classname="client.GameClient" base="${bin}" />
+    </target>
+  
+    <target name="run-server" description="run the jar file" depends="dist" >
+    	<!-- Run the server JAR. -->
+        <java jar="${jar-server}"
+              fork="true"
+              failonerror="true"
+              maxmemory="128m"
+        >
+            <arg value="-h"/>
+            <classpath>
+                <pathelement location="${jar-server}"/>
+                <pathelement path="${java.class.path}"/>
+            </classpath>            
+        </java>
+    </target>
+    
+    <target name="run-client" description="run the jar file" depends="dist" >
+    	<!-- Run the client JAR. -->
+        <java jar="${jar-client}"
+              fork="true"
+              failonerror="true"
+              maxmemory="128m"
+        >
+            <arg value="-h"/>
+            <classpath>
+                <pathelement location="${jar-client}"/>
+                <pathelement path="${java.class.path}"/>
+            </classpath>
+        </java>
+    </target>
+    
+    <target name="run-project" description="start server and two client" depends="dist">
+    	<!-- Run the server and two clients in parallel.
+    	The server is not shut down automatically and must be terminated manually
+    	(Either kill the process or 'fg' the job and press CTRL+C). -->
+        <parallel>
+        	<antcall target="run-server" />
+        	<antcall target="run-client" />
+    		<antcall target="run-client" />
+        </parallel>
+    </target>
+</project>

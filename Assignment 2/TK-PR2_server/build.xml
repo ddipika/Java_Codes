@@ -1,0 +1,70 @@
+<project name="TK1-PR2_server" default="run-project" basedir=".">
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="rsc" location="rsc"/>
+    <property name="bin" location="bin"/>
+    <property name="server-main-class" value="server.Main"/>
+    <property name="jar-server" value="TK1-PR2-server.jar"/>
+    <property name="lib" value="lib"/>
+    <path id="class.path">
+        <fileset dir="lib">
+            <include name="**/*.jar" />
+        </fileset>
+    </path>
+    <manifestclasspath property="lib.list" jarfile="${jar-server}">
+        <classpath refid="class.path"/>
+    </manifestclasspath>
+
+    <target name="init">
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${bin}"/>
+    </target>
+
+    <target name="compile" depends="init"
+            description="compile the source" >
+        <!-- Compile the java code from ${src} into ${bin} -->
+        <javac srcdir="${src}" destdir="${bin}">
+            <classpath refid="class.path" />
+        </javac>
+    </target>
+  
+    <target name="copy" depends="compile"
+            description="copy resources" >
+        <!-- Copy the resources  from ${rsc} into ${bin} -->
+        <copy todir="${bin}">
+            <fileset dir="${rsc}"/>
+        </copy>
+    </target>
+
+    <target name="dist" depends="copy"
+            description="generate the distribution" >
+        <!-- Put everything in ${bin} into the jar files -->
+        <jar destfile="${jar-server}" basedir="${bin}">
+            <manifest>
+                <attribute name="Main-Class" value="${server-main-class}"/>
+                <attribute name="Class-Path" value="${lib.list}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="clean"
+            description="clean up" >
+        <!-- Delete bin folder and jar files. -->
+        <delete dir="${bin}"/>
+        <delete file="${jar-server}"/>
+    </target>
+  
+    <target name="run-project" description="run the jar file" depends="dist" >
+        <!-- Run the server JAR. -->
+        <java jar="${jar-server}"
+              fork="true"
+              failonerror="true"
+              maxmemory="128m"
+        >
+            <classpath>
+                <pathelement location="${jar-server}"/>
+                <pathelement path="${java.class.path}"/>
+            </classpath>            
+        </java>
+    </target>
+</project>
